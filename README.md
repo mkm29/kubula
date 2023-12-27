@@ -65,6 +65,18 @@ source-controller-7f9f9f6f8f-2q9qz         1/1     Running   0          2m
 flamingo install
 ```
 
+### Install Cilium
+
+We can use Flamingo to install Cilium. The Cilium Helm chart is defined in `clusters/$CLUSTER_NAME/cilium/01-cilium-helmrelease.yaml`. You can change the values in `clusters/$CLUSTER_NAME/cilium/01-cilium-helmrelease.yaml` to customize the installation. Once you are done, commit the changes and push them to the repository. Flux will apply the changes to your cluster.
+
+```bash
+$ git add .
+$ git commit -m "Install Cilium"
+$ git push origin main
+```
+
+_Note_ - We have set `serviceMonitor.enabled` to `false` as the Prometheus CRDs need to be installed before we can enable this, and since we are replaing `kube-proxy` with `cilium`, we need to install Cilium first. After installing Prometheus, you can set this to `true` and commit the changes.
+
 ### Install Argo CD
 
 We can now use Flux to install Argo CD. We will use a HelmRelease to install Argo CD. The HelmRelease is defined in `clusters/$CLUSTER_NAME/argo-cd/argocd-helmrelease.yaml`. You can change the values in `clusters/$CLUSTER_NAME/argo-cd/02-argo-cd-helmrelease.yaml` to customize the installation. Once you are done, commit the changes and push them to the repository. Flux will apply the changes to your cluster.

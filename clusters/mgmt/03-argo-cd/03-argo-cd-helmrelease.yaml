@@ -18,6 +18,31 @@ spec:
   values:
     params:
       server.insecure: true
+    controller:
+      metrics:
+        serviceMonitor:
+          enabled: true
+          namespace: monitoring
+    redis:
+      metrics:
+        serviceMonitor:
+          enabled: true
+          namespace: monitoring
+    server:
+      metrics:
+        serviceMonitor:
+          enabled: true
+          namespace: monitoring
+    repoServer:
+      metrics:
+        serviceMonitor:
+          enabled: true
+          namespace: monitoring
+    applicationSet:
+      metrics:
+        serviceMonitor:
+          enabled: true
+          namespace: monitoring
     rbac:
       defaultPolicy: 'role:readonly'
       policy: |
