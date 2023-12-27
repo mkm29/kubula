@@ -1,0 +1,24 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: longhorn
+  namespace: longhorn
+spec:
+  interval: 1m
+  targetNamespace: longhorn-system
+  chart:
+    spec:
+      chart: longhorn
+      sourceRef:
+        kind: HelmRepository
+        name: longhorn
+        namespace: flux-system
+      interval: 1m
+      version: 1.5.3
+  values:
+    networkPolicies:
+      enabled: false
+      # Available types: k3s, rke2, rke1
+      type: "rke2"
+    defaultSettings:
+      defaultDataPath: /mnt/storage

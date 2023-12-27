@@ -1,8 +1,8 @@
 apiVersion: source.toolkit.fluxcd.io/v1beta1
 kind: HelmRepository
 metadata:
-  name: cilium
+  name: longhorn
   namespace: flux-system
 spec:
-    interval: 1m
-    url: https://helm.cilium.io
+  interval: 1m
+  url: https://charts.longhorn.io
