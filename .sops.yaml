@@ -7,7 +7,7 @@ creation_rules:
   # Production environment secrets
   - path_regex: secrets/prod/.*\.(yaml|yml|json)$
     kms: arn:aws:kms:us-east-1:388565714261:alias/kubula-prod
-    aws_profile: terraform-eks-prod
+    aws_profile: terraform-eks
 
   # Default rule for any other secrets files
   - path_regex: .*\.(yaml|yml|json)$
