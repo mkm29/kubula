@@ -4,105 +4,114 @@ A comprehensive Infrastructure as Code (IaC) solution for deploying secure, scal
 
 ## Architecture Overview
 
+### High-Level Architecture
+
 ```mermaid
 graph TB
-    subgraph "AWS Cloud"
-        subgraph "VPC (10.0.0.0/16)"
-            subgraph "Public Subnets (DMZ)"
-                IGW[Internet Gateway]
-                NAT1[NAT Gateway AZ1]
-                NAT2[NAT Gateway AZ2]
-                NAT3[NAT Gateway AZ3]
-                subgraph "Bastion ASG"
-                    B1[Bastion Host 1]
-                    B2[Bastion Host 2]
-                end
-            end
-            
-            subgraph "Private Subnets"
-                subgraph "EKS Cluster"
-                    CP[EKS Control Plane]
-                    subgraph "Node Group - General"
-                        N1[Worker Node 1]
-                        N2[Worker Node 2]
-                        N3[Worker Node 3]
-                    end
-                    subgraph "Node Group - Critical"
-                        NC1[Critical Node 1]
-                        NC2[Critical Node 2]
-                    end
-                end
-                
-                subgraph "VPC Endpoints"
-                    EP1[S3 Endpoint]
-                    EP2[ECR Endpoints]
-                    EP3[EC2/EKS Endpoints]
-                end
-            end
+    subgraph "External"
+        Users[Users/DevOps]
+    end
+    
+    subgraph "AWS Account"
+        Bastion[Bastion Hosts<br/>Auto-Scaling]
+        EKS[EKS Cluster<br/>Private Nodes]
+        Services[AWS Services<br/>KMS, S3, ECR]
+    end
+    
+    Users -->|SSH| Bastion
+    Users -->|kubectl| EKS
+    Bastion -->|Access| EKS
+    EKS <-->|Secure| Services
+    
+    style Users fill:#e8f5e9
+    style Bastion fill:#e1f5fe
+    style EKS fill:#fce4ec
+    style Services fill:#f3e5f5
+```
+
+### Network Topology
+
+```mermaid
+graph TB
+    subgraph "VPC 10.0.0.0/16"
+        subgraph "Public Subnets"
+            IGW[Internet Gateway]
+            NAT[NAT Gateways<br/>Multi-AZ]
+            BAS[Bastion Hosts]
         end
         
-        subgraph "AWS Services"
-            KMS[AWS KMS]
-            ECR[Amazon ECR]
-            S3[Amazon S3]
-            CW[CloudWatch]
+        subgraph "Private Subnets"
+            EKS[EKS Nodes]
+            EP[VPC Endpoints]
         end
     end
     
-    subgraph "External Access"
-        CORP[Corporate Network]
-        VPN[VPN Users]
-        KUBECTL[kubectl clients]
+    Internet[Internet] --> IGW
+    IGW --> BAS
+    BAS --> EKS
+    EKS --> NAT
+    NAT --> IGW
+    EKS --> EP
+    EP --> AWS[AWS Services]
+    
+    style Internet fill:#f44336
+    style IGW fill:#2196f3
+    style NAT fill:#2196f3
+    style BAS fill:#4caf50
+    style EKS fill:#ff9800
+    style EP fill:#9c27b0
+    style AWS fill:#673ab7
+```
+
+### Security Layers
+
+```mermaid
+graph LR
+    subgraph "Security Controls"
+        KMS[KMS Encryption]
+        SOPS[SOPS Secrets]
+        IAM[IAM/IRSA]
+        SG[Security Groups]
+        NACL[Network ACLs]
     end
     
-    %% Connections
-    CORP --> IGW
-    VPN --> IGW
-    IGW --> B1
-    IGW --> B2
-    B1 --> N1
-    B1 --> N2
-    B1 --> N3
-    B2 --> N1
-    B2 --> N2
-    B2 --> N3
+    subgraph "Infrastructure"
+        Bastion[Bastion Host]
+        EKS[EKS Cluster]
+        Data[Data at Rest]
+    end
     
-    N1 --> NAT1
-    N2 --> NAT2
-    N3 --> NAT3
-    NAT1 --> IGW
-    NAT2 --> IGW
-    NAT3 --> IGW
+    KMS --> Data
+    SOPS --> Bastion
+    IAM --> EKS
+    SG --> Bastion
+    SG --> EKS
+    NACL --> Bastion
+    NACL --> EKS
     
-    CP --> N1
-    CP --> N2
-    CP --> N3
-    CP --> NC1
-    CP --> NC2
+    style KMS fill:#ff5722
+    style SOPS fill:#ff5722
+    style IAM fill:#ff5722
+    style SG fill:#03a9f4
+    style NACL fill:#03a9f4
+```
+
+### Deployment Flow
+
+```mermaid
+graph LR
+    Dev[Developer] -->|1. Push Code| Git[Git Repository]
+    Git -->|2. Trigger| TG[Terragrunt]
+    TG -->|3. Apply| AWS[AWS Resources]
+    AWS -->|4. Create| Infra[VPC + EKS + Bastion]
+    Infra -->|5. Ready| K8s[Kubernetes Workloads]
     
-    N1 --> EP1
-    N1 --> EP2
-    N1 --> EP3
-    N2 --> EP1
-    N2 --> EP2
-    N2 --> EP3
-    
-    KUBECTL -.->|Private Access| CP
-    KUBECTL -.->|Public Access Dev Only| IGW
-    
-    KMS -.->|Encryption| CP
-    KMS -.->|SOPS| CORP
-    
-    %% Styling
-    classDef public fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef private fill:#fce4ec,stroke:#880e4f,stroke-width:2px
-    classDef service fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef external fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
-    
-    class IGW,NAT1,NAT2,NAT3,B1,B2 public
-    class CP,N1,N2,N3,NC1,NC2,EP1,EP2,EP3 private
-    class KMS,ECR,S3,CW service
-    class CORP,VPN,KUBECTL external
+    style Dev fill:#4caf50
+    style Git fill:#2196f3
+    style TG fill:#ff9800
+    style AWS fill:#9c27b0
+    style Infra fill:#f44336
+    style K8s fill:#00bcd4
 ```
 
 ## Features
